@@ -34,9 +34,9 @@ describe("editorial_context", () => {
 });
 
 describe("archive_intelligence", () => {
-  test("finds posts that recur across metric leaderboards", async () => {
+  test("finds posts that recur across metric rankings and marks adverse metrics", async () => {
     const result = await archiveIntelligenceHandler(
-      {metrics: ["signups", "views", "shares"], limit: 2},
+      {metrics: ["signups", "views", "unsubscribes"], limit: 2},
       {
         getPostStats: async ({order_by}) => ({
           posts: [
@@ -47,9 +47,11 @@ describe("archive_intelligence", () => {
       }
     );
 
-    assert.equal(result.recurring_leaders[0].post_id, 1);
-    assert.equal(result.recurring_leaders[0].metrics_present, 3);
-    assert.deepEqual(result.recurring_leaders[0].ranks, {signups: 1, views: 1, shares: 1});
+    assert.equal(result.recurring_posts[0].post_id, 1);
+    assert.equal(result.recurring_posts[0].metrics_present, 3);
+    assert.deepEqual(result.recurring_posts[0].ranks, {signups: 1, views: 1, unsubscribes: 1});
+    assert.deepEqual(result.recurring_posts[0].adverse_metrics, ["unsubscribes"]);
+    assert.equal(result.metric_semantics.unsubscribes.direction, "adverse");
   });
 });
 
