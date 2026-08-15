@@ -104,6 +104,10 @@ If the draft is created successfully but a later setting or tag fails, the draft
 8. Call `publish_draft` only when publication is explicitly approved; set `send: true` only when subscriber email delivery is explicitly intended.
 9. Use the existing `get_post_stats` and `get_analytics` tools after publication to close the learning loop.
 
+## Validation
+
+The fork keeps the upstream pull-request test workflow. It runs the complete Node test suite on the development runtime and again on the declared Node 22 engine floor before the editorial layer should be merged.
+
 ## Design principle
 
 The MCP should expose reliable evidence and safe write operations. The LLM should perform the editorial reasoning. Keeping those roles separate makes the system easier to audit, easier to update from upstream and less likely to turn editorial judgement into opaque hard-coded heuristics.
