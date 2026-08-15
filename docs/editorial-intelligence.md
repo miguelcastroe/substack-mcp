@@ -35,7 +35,7 @@ For an MCP client, point the command at `node` and the argument at the absolute 
 
 ### `editorial_context`
 
-Use before writing about a topic. It searches your own published archive and optional drafts for the topic, then returns benchmark leaders for:
+Use before writing about a topic. It searches your own published archive and optional drafts for the topic, then returns benchmark rankings for:
 
 - signups
 - subscribers finishing the post
@@ -46,15 +46,18 @@ The tool gathers evidence. The calling model decides whether the proposed articl
 
 ### `archive_intelligence`
 
-Compares post leaderboards across selected metrics and identifies posts that recur near the top of more than one dimension. Default dimensions cover acquisition, value, completion, reach and churn.
+Compares post rankings across selected metrics and identifies posts that recur near the top of more than one dimension. Default dimensions cover acquisition, value, completion, reach and churn.
+
+The output labels metric semantics explicitly. `unsubscribes` is an adverse signal, so a post that ranks highly for both acquisition and churn is surfaced as something worth investigating, not described as a winner.
 
 This is useful for questions such as:
 
-- Which posts consistently perform across more than one outcome?
+- Which posts recur across more than one outcome?
 - What has historically grown the list versus merely generated views?
 - Which pieces combine reading depth with acquisition?
+- Which high-acquisition posts also created unusual churn?
 
-Recurring performance is a signal, not a causal explanation.
+Cross-metric recurrence is a signal, not a quality score or a causal explanation.
 
 ### `seo_audit`
 
