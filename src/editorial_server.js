@@ -18,7 +18,7 @@ export const editorialTools = {
   },
   archive_intelligence: {
     description:
-      "Compare the strongest posts across several performance dimensions and identify recurring cross-metric leaders. Use this to learn what has historically driven acquisition, value, completion, reach, sharing or churn without pretending correlation is causation.",
+      "Compare posts across several performance dimensions and identify cross-metric recurrence. Positive and adverse signals are labelled separately, so a post ranking high for acquisition and churn is surfaced as something to investigate rather than called a winner.",
     schema: archiveIntelligenceSchema,
     handler: archiveIntelligenceHandler,
   },
