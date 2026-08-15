@@ -10,7 +10,6 @@ export const ARCHIVE_INTELLIGENCE_METRICS = [
   "views",
   "shares",
   "restacks",
-  "engagement_rate",
   "unsubscribes",
 ];
 
@@ -22,11 +21,22 @@ const DEFAULT_METRICS = [
   "unsubscribes",
 ];
 
+const METRIC_SEMANTICS = {
+  signups: {direction: "positive", meaning: "free subscriber acquisition"},
+  subscribes: {direction: "positive", meaning: "paid subscription conversion"},
+  estimated_value: {direction: "positive", meaning: "estimated subscriber value attributed to the post"},
+  subscribers_finished_post: {direction: "positive", meaning: "subscriber completion"},
+  views: {direction: "positive", meaning: "reach"},
+  shares: {direction: "positive", meaning: "sharing"},
+  restacks: {direction: "positive", meaning: "Substack network amplification"},
+  unsubscribes: {direction: "adverse", meaning: "subscriber churn attributed to the post"},
+};
+
 export const archiveIntelligenceSchema = z.strictObject({
   metrics: z
     .array(z.enum(ARCHIVE_INTELLIGENCE_METRICS))
     .min(1)
-    .max(9)
+    .max(8)
     .optional()
     .default(DEFAULT_METRICS)
     .describe(
@@ -39,7 +49,7 @@ export const archiveIntelligenceSchema = z.strictObject({
     .max(25)
     .optional()
     .default(10)
-    .describe("How many leaders to retrieve for each metric, default 10."),
+    .describe("How many top-ranked posts to retrieve for each metric, default 10."),
 });
 
 function compact(post) {
@@ -56,7 +66,6 @@ function compact(post) {
     "views",
     "shares",
     "restacks",
-    "engagement_rate",
     "unsubscribes",
     "open_rate",
     "click_through_rate",
@@ -105,13 +114,16 @@ export const archiveIntelligenceHandler = async (
     });
   }
 
-  const recurring_leaders = [...appearances.values()]
+  const recurring_posts = [...appearances.values()]
     .map((post) => {
       const ranks = Object.values(post.ranks);
       return {
         ...post,
         metrics_present: ranks.length,
         average_rank: ranks.reduce((sum, rank) => sum + rank, 0) / ranks.length,
+        adverse_metrics: Object.keys(post.ranks).filter(
+          (metric) => METRIC_SEMANTICS[metric]?.direction === "adverse"
+        ),
       };
     })
     .filter((post) => post.metrics_present > 1)
@@ -123,16 +135,17 @@ export const archiveIntelligenceHandler = async (
 
   const result = {
     metrics,
+    metric_semantics: Object.fromEntries(metrics.map((metric) => [metric, METRIC_SEMANTICS[metric]])),
     limit,
     rankings,
-    recurring_leaders,
+    recurring_posts,
     interpretation_note:
-      "Recurring leaders are posts that appear near the top of more than one selected metric. This is a cross-metric signal, not a causal explanation of why the post worked.",
+      "Recurring posts appear near the top of more than one selected metric. Some metrics, especially unsubscribes, are adverse signals. Recurrence shows where attention is warranted; it is not a quality score or a causal explanation.",
   };
 
   logger.info("archive_intelligence.done", {
     metrics: metrics.length,
-    recurring_leaders: recurring_leaders.length,
+    recurring_posts: recurring_posts.length,
   });
 
   return result;
