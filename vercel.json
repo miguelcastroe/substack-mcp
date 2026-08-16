@@ -3,6 +3,22 @@
     {
       "source": "/.well-known/openai-apps-challenge",
       "destination": "/api/openai-apps-challenge"
+    },
+    {
+      "source": "/",
+      "destination": "/api/site?page=home"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/api/site?page=privacy"
+    },
+    {
+      "source": "/terms",
+      "destination": "/api/site?page=terms"
+    },
+    {
+      "source": "/support",
+      "destination": "/api/site?page=support"
     }
   ]
 }
