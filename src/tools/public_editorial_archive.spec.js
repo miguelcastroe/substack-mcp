@@ -64,8 +64,11 @@ describe("publicEditorialArchiveHandler", () => {
     );
 
     assert.equal(result.returned, 3);
-    assert.equal(result.complete, true);
-    assert.equal(result.next_offset, null);
+    // The final page was exactly as large as the remaining request budget. The server cannot know
+    // whether another archive entry exists without a continuation call, so it must preserve the
+    // next offset instead of falsely declaring the archive complete.
+    assert.equal(result.complete, false);
+    assert.equal(result.next_offset, 4);
     assert.equal(result.non_newsletter_entries_skipped, 1);
     assert.deepEqual(result.items.map((item) => item.slug), ["one", "four", "three"]);
     assert.equal(result.items[0].body_html, "<p>one body</p>");
