@@ -24,7 +24,7 @@ function copyHeaders(nodeHeaders = {}) {
 }
 
 function toWebRequest(request) {
-  const method = request.method ?? "GET";
+  const method = request.method ?? "POST";
   const headers = copyHeaders(request.headers);
   const protocol = headers.get("x-forwarded-proto") ?? "https";
   const host = headers.get("host") ?? "localhost";
@@ -43,6 +43,9 @@ async function writeWebResponse(webResponse, response) {
     response.setHeader(name, value);
   }
 
+  // This endpoint deliberately handles only finite POST request/response traffic. A standalone
+  // GET would be an open-ended SSE stream and must never be buffered with arrayBuffer(). GET is
+  // rejected earlier with 405 so MCP clients know this stateless server does not offer SSE.
   const body = Buffer.from(await webResponse.arrayBuffer());
   response.end(body);
 }
@@ -67,15 +70,23 @@ export default async function handler(request, response) {
     return;
   }
 
-  if (!["GET", "POST", "DELETE"].includes(request.method ?? "")) {
-    jsonResponse(response, 405, {error: "method_not_allowed"}, {Allow: "GET, POST, DELETE"});
+  // Streamable HTTP clients may open a standalone GET/SSE channel immediately after the
+  // initialized notification. This read-only server has no server-initiated notifications,
+  // resumability or sessions, so it intentionally does not expose that channel. MCP clients treat
+  // 405 on GET as the standard signal that SSE is unavailable and continue using POST normally.
+  // DELETE is likewise unnecessary in stateless mode because there is no session to terminate.
+  if (request.method === "GET" || request.method === "DELETE") {
+    jsonResponse(response, 405, {error: "method_not_allowed"}, {Allow: "POST"});
+    return;
+  }
+
+  if (request.method !== "POST") {
+    jsonResponse(response, 405, {error: "method_not_allowed"}, {Allow: "POST"});
     return;
   }
 
   const server = createIntelligenceServer();
   const transport = new WebStandardStreamableHTTPServerTransport({
-    // Fresh server + fresh transport per HTTP request: safe for horizontally scaled Vercel
-    // Functions and sufficient for this read-only request/response tool surface.
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   });
