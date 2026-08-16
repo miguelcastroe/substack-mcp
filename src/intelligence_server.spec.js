@@ -23,6 +23,7 @@ describe("Substack Intelligence tool surface", () => {
     }
 
     assert.ok(intelligenceTools.substack_landscape);
+    assert.ok(intelligenceTools.editorial_archive);
     assert.ok(intelligenceTools.editorial_context);
     assert.ok(intelligenceTools.archive_intelligence);
     assert.ok(intelligenceTools.seo_audit);
