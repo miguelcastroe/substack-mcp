@@ -8,6 +8,7 @@ Its job is to let an MCP client understand:
 - what is appearing in the reader Inbox
 - what is appearing in subscribed and for-you feeds
 - what the user's own publication has already published or drafted
+- the complete readable corpus of the configured publication plus the user's Notes
 - which posts rank highly across acquisition, reach, completion, value and churn metrics
 - publication-level analytics and trends
 - comments, tags and public/profile context
@@ -44,6 +45,22 @@ Returns the account's personalized Substack ecosystem in one call:
 
 This is **not** a global search of all Substack. It represents what this account follows and what Substack is surfacing to it. External web research can complement it.
 
+### `editorial_archive`
+
+Builds the corpus a model needs for archive-level editorial work without making the user copy post ids or call one article at a time.
+
+It:
+
+- resolves the configured publication
+- scans the user's profile feed across multiple cursor pages
+- keeps published posts that belong to the configured publication
+- optionally keeps the user's Notes
+- hydrates every matching post with its full readable HTML body
+- deduplicates entries surfaced on more than one profile page
+- reports individual body-fetch failures without throwing away the rest of the archive
+
+The default scan reads up to four profile pages of 50 entries each. If an unusually large archive exceeds that budget, the response includes `next_cursor`; an MCP client can continue automatically without asking the user to copy the cursor.
+
 ### `editorial_context`
 
 Searches the user's own publication for related work and adds performance benchmarks.
@@ -79,10 +96,11 @@ The read-only remote server deliberately does not log tool results. Full reader 
 
 The target interaction remains inside ChatGPT:
 
-1. The user asks about a theme, author, signal or possible article.
+1. The user asks about a theme, author, signal, archive pattern or possible article.
 2. ChatGPT uses normal web research when useful.
 3. ChatGPT calls Substack Intelligence for personalized Substack context.
-4. It crosses that landscape with the user's own archive and KPIs.
-5. The discussion, editorial judgement and writing remain in ChatGPT.
+4. For archive-level work, ChatGPT calls `editorial_archive` and follows any continuation cursor itself.
+5. It crosses that corpus with the user's KPIs when useful.
+6. The discussion, editorial judgement and writing remain in ChatGPT.
 
 No OpenAI API call is required by this MCP server itself.
