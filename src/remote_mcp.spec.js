@@ -178,7 +178,7 @@ describe("remote MCP endpoint", () => {
     }
   });
 
-  test("lists tools on a fresh stateless request", async () => {
+  test("lists tools on a fresh stateless request with explicit read-only review hints", async () => {
     const before = snapshotEnv();
     try {
       configureTestEnv();
@@ -199,6 +199,18 @@ describe("remote MCP endpoint", () => {
       assert.ok(body.result.tools.some((tool) => tool.name === "substack_landscape"));
       assert.ok(body.result.tools.some((tool) => tool.name === "editorial_archive"));
       assert.ok(body.result.tools.some((tool) => tool.name === "archive_intelligence"));
+
+      for (const tool of body.result.tools) {
+        assert.deepEqual(
+          tool.annotations,
+          {
+            readOnlyHint: true,
+            destructiveHint: false,
+            openWorldHint: false,
+          },
+          `${tool.name} must expose explicit read-only submission hints`
+        );
+      }
     } finally {
       restoreEnv(before);
     }
