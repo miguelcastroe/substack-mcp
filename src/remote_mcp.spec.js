@@ -42,6 +42,19 @@ function mcpRequest(body, authorization = "Bearer transport-secret", extraHeader
   };
 }
 
+function mcpGet(authorization = "Bearer transport-secret", extraHeaders = {}) {
+  return {
+    method: "GET",
+    url: "/api/mcp",
+    headers: {
+      host: "example.vercel.app",
+      accept: "text/event-stream",
+      authorization,
+      ...extraHeaders,
+    },
+  };
+}
+
 const ENV_NAMES = [
   "SUBSTACK_PUBLICATION_URL",
   "SUBSTACK_SESSION_TOKEN",
@@ -122,6 +135,44 @@ describe("remote MCP endpoint", () => {
       assert.equal(body.jsonrpc, "2.0");
       assert.equal(body.id, 1);
       assert.equal(body.result.serverInfo.name, "Substack Intelligence");
+    } finally {
+      restoreEnv(before);
+    }
+  });
+
+  test("accepts initialized notification without opening a response stream", async () => {
+    const before = snapshotEnv();
+    try {
+      configureTestEnv();
+      const response = fakeResponse();
+      await handler(
+        mcpRequest(
+          {jsonrpc: "2.0", method: "notifications/initialized"},
+          "Bearer transport-secret",
+          {"mcp-protocol-version": LATEST_PROTOCOL_VERSION}
+        ),
+        response
+      );
+
+      assert.equal(response.statusCode, 202);
+    } finally {
+      restoreEnv(before);
+    }
+  });
+
+  test("returns 405 to the standalone GET/SSE probe used by Streamable HTTP clients", async () => {
+    const before = snapshotEnv();
+    try {
+      configureTestEnv();
+      const response = fakeResponse();
+      await handler(
+        mcpGet("Bearer transport-secret", {"mcp-protocol-version": LATEST_PROTOCOL_VERSION}),
+        response
+      );
+
+      assert.equal(response.statusCode, 405);
+      assert.equal(response.headers.allow, "POST");
+      assert.equal(response.jsonValue().error, "method_not_allowed");
     } finally {
       restoreEnv(before);
     }
