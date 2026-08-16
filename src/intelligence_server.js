@@ -29,6 +29,15 @@ export const READ_ONLY_BASE_TOOL_NAMES = [
   "get_analytics",
 ];
 
+// OpenAI's plugin review requires all three behavioral hints to be explicit on every exposed tool.
+// This server is intentionally a closed, read-only surface: it fetches or computes data but cannot
+// create, edit, publish, message, delete, restack, tag, or otherwise mutate Substack or the public web.
+export const READ_ONLY_TOOL_ANNOTATIONS = Object.freeze({
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: false,
+});
+
 const readOnlyBaseTools = Object.fromEntries(
   READ_ONLY_BASE_TOOL_NAMES.map((name) => {
     const tool = baseTools[name];
@@ -75,28 +84,38 @@ export function createIntelligenceServer() {
   const server = new McpServer({name: "Substack Intelligence", version});
 
   for (const [name, {description, schema, handler}] of Object.entries(intelligenceTools)) {
-    server.registerTool(name, {description, inputSchema: schema}, async (args) => {
-      const startedAt = Date.now();
-      logger.info("intelligence.tool.call.start", {tool: name, args});
+    server.registerTool(
+      name,
+      {
+        description,
+        inputSchema: schema,
+        annotations: READ_ONLY_TOOL_ANNOTATIONS,
+      },
+      async (args) => {
+        const startedAt = Date.now();
+        // Keep the remote log operational only. Tool arguments can contain editorial search terms;
+        // they are not needed to diagnose whether a tool started, succeeded, or failed.
+        logger.info("intelligence.tool.call.start", {tool: name});
 
-      try {
-        const result = await handler(args);
-        // Do not log tool results here. Reader posts, drafts and analytics may contain private
-        // publication data; remote hosting logs should carry operational metadata, not content.
-        logger.info("intelligence.tool.call.success", {
-          tool: name,
-          duration_ms: Date.now() - startedAt,
-        });
-        return {content: [{type: "text", text: JSON.stringify(result, null, 2)}]};
-      } catch (error) {
-        logger.error("intelligence.tool.call.error", {
-          tool: name,
-          duration_ms: Date.now() - startedAt,
-          error,
-        });
-        throw error;
+        try {
+          const result = await handler(args);
+          // Do not log tool results here. Reader posts, drafts and analytics may contain private
+          // publication data; remote hosting logs should carry operational metadata, not content.
+          logger.info("intelligence.tool.call.success", {
+            tool: name,
+            duration_ms: Date.now() - startedAt,
+          });
+          return {content: [{type: "text", text: JSON.stringify(result, null, 2)}]};
+        } catch (error) {
+          logger.error("intelligence.tool.call.error", {
+            tool: name,
+            duration_ms: Date.now() - startedAt,
+            error,
+          });
+          throw error;
+        }
       }
-    });
+    );
   }
 
   return server;
