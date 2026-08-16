@@ -197,6 +197,7 @@ describe("remote MCP endpoint", () => {
       assert.equal(body.jsonrpc, "2.0");
       assert.equal(body.id, 2);
       assert.ok(body.result.tools.some((tool) => tool.name === "substack_landscape"));
+      assert.ok(body.result.tools.some((tool) => tool.name === "editorial_archive"));
       assert.ok(body.result.tools.some((tool) => tool.name === "archive_intelligence"));
     } finally {
       restoreEnv(before);
