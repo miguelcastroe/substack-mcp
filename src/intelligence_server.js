@@ -2,6 +2,7 @@ import {readFileSync} from "node:fs";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {tools as baseTools} from "./server.js";
 import {editorialContextSchema, editorialContextHandler} from "./tools/editorial_context.js";
+import {editorialArchiveSchema, editorialArchiveHandler} from "./tools/editorial_archive.js";
 import {archiveIntelligenceSchema, archiveIntelligenceHandler} from "./tools/archive_intelligence.js";
 import {seoAuditSchema, seoAuditHandler} from "./tools/seo_audit.js";
 import {substackLandscapeSchema, substackLandscapeHandler} from "./tools/substack_landscape.js";
@@ -43,6 +44,12 @@ export const intelligenceTools = {
       "Read the account's personalized Substack landscape in one call: active subscriptions, recent subscribed-post Inbox entries, the subscribed feed and optionally the for-you feed. Use it to identify who is publishing, recurring themes and emerging signals. This is personalized context, not a global search of all Substack.",
     schema: substackLandscapeSchema,
     handler: substackLandscapeHandler,
+  },
+  editorial_archive: {
+    description:
+      "Build a normalized editorial corpus in one call by scanning the user's profile, keeping published posts from the configured publication, optionally including the user's Notes, and hydrating matching posts with their complete readable bodies. Follows profile pagination internally and returns a continuation cursor only when the archive exceeds the scan budget. Read-only.",
+    schema: editorialArchiveSchema,
+    handler: editorialArchiveHandler,
   },
   editorial_context: {
     description:
