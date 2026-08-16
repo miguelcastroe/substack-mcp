@@ -35,10 +35,11 @@ describe("publicEditorialArchiveHandler", () => {
     const bodyCalls = [];
     const pages = new Map([
       [0, [
-        {id: 1, slug: "one", title: "One", type: "newsletter", audience: "everyone", post_date: "2026-01-03"},
-        {id: 2, slug: "pod", title: "Podcast", type: "podcast", audience: "everyone", post_date: "2026-01-02"},
+        {id: 1, slug: "one", title: "One", type: "newsletter", audience: "everyone", post_date: "2026-01-04"},
+        {id: 2, slug: "pod", title: "Podcast", type: "podcast", audience: "everyone", post_date: "2026-01-03"},
+        {id: 4, slug: "four", title: "Four", type: "newsletter", audience: "everyone", post_date: "2026-01-02"},
       ]],
-      [2, [
+      [3, [
         {id: 3, slug: "three", title: "Three", type: "newsletter", audience: "only_paid", post_date: "2026-01-01"},
       ]],
     ]);
@@ -54,7 +55,7 @@ describe("publicEditorialArchiveHandler", () => {
           bodyCalls.push({origin, slug});
           return {
             slug,
-            title: slug === "one" ? "One" : "Three",
+            title: slug[0].toUpperCase() + slug.slice(1),
             audience: slug === "three" ? "only_paid" : "everyone",
             body_html: `<p>${slug} body</p>`,
           };
@@ -62,16 +63,16 @@ describe("publicEditorialArchiveHandler", () => {
       }
     );
 
-    assert.equal(result.returned, 2);
+    assert.equal(result.returned, 3);
     assert.equal(result.complete, true);
     assert.equal(result.next_offset, null);
     assert.equal(result.non_newsletter_entries_skipped, 1);
-    assert.deepEqual(result.items.map((item) => item.slug), ["one", "three"]);
+    assert.deepEqual(result.items.map((item) => item.slug), ["one", "four", "three"]);
     assert.equal(result.items[0].body_html, "<p>one body</p>");
     assert.equal(result.items[0].body_scope, "public_body");
-    assert.equal(result.items[1].body_scope, "public_preview");
-    assert.deepEqual(bodyCalls.map((call) => call.slug), ["one", "three"]);
-    assert.deepEqual(archiveCalls.map((call) => call.offset), [0, 2]);
+    assert.equal(result.items[2].body_scope, "public_preview");
+    assert.deepEqual(bodyCalls.map((call) => call.slug), ["one", "four", "three"]);
+    assert.deepEqual(archiveCalls.map((call) => call.offset), [0, 3]);
   });
 
   test("can return a metadata-only manifest", async () => {
@@ -166,7 +167,7 @@ describe("fetchPublicArchivePage security", () => {
       {publication_url: "https://custom.example/p/a-post", offset: 0, limit: 1},
       {
         lookup: async () => [{address: "203.0.113.10", family: 4}],
-        fetchImpl: async (url) => new Response(
+        fetchImpl: async () => new Response(
           JSON.stringify([{id: 1, slug: "one"}]),
           {status: 200, headers: {"Content-Type": "application/json"}}
         ),
